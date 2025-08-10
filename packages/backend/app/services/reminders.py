@@ -37,7 +37,12 @@ def send_email(to_email: str, subject: str, body: str):
 
 
 def send_whatsapp(to_number: str, body: str):
-    if not (_settings.twilio_account_sid and _settings.twilio_auth_token and _settings.twilio_whatsapp_from and TwilioClient):
+    if not (
+        _settings.twilio_account_sid
+        and _settings.twilio_auth_token
+        and _settings.twilio_whatsapp_from
+        and TwilioClient
+    ):
         return False
     try:
         client = TwilioClient(_settings.twilio_account_sid, _settings.twilio_auth_token)

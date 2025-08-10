@@ -18,7 +18,11 @@ def _heuristic_budget(uid: int, ym: str):
     year, month = map(int, ym.split("-"))
     total = (
         db.session.query(func.coalesce(func.sum(Expense.amount), 0))
-        .filter(Expense.user_id == uid, extract("year", Expense.spent_at) == year, extract("month", Expense.spent_at) == month)
+        .filter(
+            Expense.user_id == uid,
+            extract("year", Expense.spent_at) == year,
+            extract("month", Expense.spent_at) == month,
+        )
         .scalar()
     )
     # Suggest 90% of last spend with 50/30/20 breakdown
@@ -42,7 +46,11 @@ def monthly_budget_suggestion(uid: int, ym: str):
             year, month = map(int, ym.split("-"))
             rows = (
                 db.session.query(Expense.category_id, func.sum(Expense.amount))
-                .filter(Expense.user_id == uid, extract("year", Expense.spent_at) == year, extract("month", Expense.spent_at) == month)
+                .filter(
+                    Expense.user_id == uid,
+                    extract("year", Expense.spent_at) == year,
+                    extract("month", Expense.spent_at) == month,
+                )
                 .group_by(Expense.category_id)
                 .all()
             )
