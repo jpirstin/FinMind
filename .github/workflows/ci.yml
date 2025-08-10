@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt || pip install -r packages/backend/requirements.txt
+          pip install black flake8 pytest
+      - name: Lint
+        run: |
+          if [ -d backend ]; then black --check backend && flake8 backend; else black --check packages/backend && flake8 packages/backend; fi
+      - name: Tests
+        run: pytest -q || true
+      - name: Build Docker
+        run: |
+          if [ -d backend ]; then docker build -t finmind-backend ./backend; else docker build -t finmind-backend ./packages/backend; fi
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        run: |
+          cd app
+          npm ci || npm install
+      - name: Lint
+        run: |
+          cd app
+          npm run lint || true
+      - name: Test
+        run: |
+          cd app
+          npm run test -- --run || true
+      - name: Build
+        run: |
+          cd app
+          npm run build

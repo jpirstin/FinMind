@@ -1,0 +1,16 @@
+from flask import Flask
+from .auth import bp as auth_bp
+from .expenses import bp as expenses_bp
+from .bills import bp as bills_bp
+from .reminders import bp as reminders_bp
+from .insights import bp as insights_bp
+from .categories import bp as categories_bp
+
+
+def register_routes(app: Flask):
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(expenses_bp, url_prefix="/expenses")
+    app.register_blueprint(bills_bp, url_prefix="/bills")
+    app.register_blueprint(reminders_bp, url_prefix="/reminders")
+    app.register_blueprint(insights_bp, url_prefix="/insights")
+    app.register_blueprint(categories_bp, url_prefix="/categories")

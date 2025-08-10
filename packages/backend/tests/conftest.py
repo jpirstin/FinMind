@@ -1,0 +1,47 @@
+import os
+import pytest
+from app import create_app
+from app.config import Settings
+from app.extensions import db
+from app import models  # noqa: F401 - ensure models are registered
+
+
+class TestSettings(Settings):
+    # Override defaults for tests
+    database_url: str = "sqlite+pysqlite:///:memory:"
+    redis_url: str = "redis://localhost:6379/15"  # not used in tests
+    jwt_secret: str = "test-secret"
+
+
+def _setup_db(app):
+    with app.app_context():
+        db.create_all()
+
+
+@pytest.fixture()
+def app_fixture():
+    # Ensure a clean env for tests
+    os.environ.setdefault("FLASK_ENV", "testing")
+    settings = TestSettings()
+    app = create_app(settings)
+    app.config.update(TESTING=True)
+    _setup_db(app)
+    yield app
+
+
+@pytest.fixture()
+def client(app_fixture):
+    return app_fixture.test_client()
+
+
+@pytest.fixture()
+def auth_header(client):
+    # Register and login a default user, return auth header
+    email = "test@example.com"
+    password = "password123"
+    r = client.post("/auth/register", json={"email": email, "password": password})
+    assert r.status_code in (200, 201, 409)  # 409 if already exists
+    r = client.post("/auth/login", json={"email": email, "password": password})
+    assert r.status_code == 200
+    access = r.get_json()["access_token"]
+    return {"Authorization": f"Bearer {access}"}

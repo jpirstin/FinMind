@@ -1,0 +1,38 @@
+# Dependencies and build artifacts
+node_modules/
+dist/
+.build/
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Tests caches
+.pytest_cache/
+.mypy_cache/
+
+# Docker
+**/.dockerignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
