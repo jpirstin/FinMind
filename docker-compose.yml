@@ -18,7 +18,11 @@ services:
       - .env
     depends_on: [postgres, redis]
     ports: ["8000:8000"]
-    volumes: ["./packages/backend/tests:/app/tests:ro"]
+    volumes:
+      - ./packages/backend/app:/app/app
+      - ./packages/backend/wsgi.py:/app/wsgi.py
+      - ./packages/backend/tests:/app/tests:ro
+    command: gunicorn --reload --workers=2 --threads=4 --bind 0.0.0.0:8000 wsgi:app
 
   frontend:
     build: ./app

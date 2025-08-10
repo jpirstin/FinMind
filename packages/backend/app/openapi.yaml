@@ -1,0 +1,429 @@
+openapi: 3.0.3
+info:
+  title: FinMind API
+  version: 0.1.0
+  description: API for budgeting, bills, reminders and insights
+servers:
+  - url: http://localhost:8000
+tags:
+  - name: Auth
+  - name: Categories
+  - name: Expenses
+  - name: Bills
+  - name: Reminders
+  - name: Insights
+paths:
+  /auth/register:
+    post:
+      summary: Register user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+            example:
+              email: user@example.com
+              password: secret123
+      responses:
+        '201': { description: Created }
+        '400':
+          description: Email already used or missing fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: "email already used" }
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+            example:
+              email: user@example.com
+              password: secret123
+      responses:
+        '200':
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: "invalid credentials" }
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: New access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Missing/invalid refresh token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: "Missing Authorization Header" }
+
+  /categories:
+    get:
+      summary: List categories
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              example:
+                - { id: 1, name: Groceries }
+                - { id: 2, name: Utilities }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Create category
+      tags: [Categories]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+            example: { name: Subscriptions }
+      responses:
+        '201': { description: Created }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: "category already exists" }
+
+  /expenses:
+    get:
+      summary: List expenses
+      tags: [Expenses]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+              example:
+                - { id: 10, amount: 12.5, currency: USD, category_id: 1, notes: Lunch, spent_at: 2025-08-10 }
+                - { id: 11, amount: 49.0, currency: USD, category_id: 2, notes: "", spent_at: 2025-08-09 }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Create expense
+      tags: [Expenses]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewExpense'
+            example:
+              amount: 12.5
+              currency: USD
+              category_id: 1
+              notes: Lunch
+              spent_at: 2025-08-10
+      responses:
+        '201': { description: Created }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /bills:
+    get:
+      summary: List bills
+      tags: [Bills]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of bills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bill'
+              example:
+                - { id: 3, name: Internet, amount: 49.99, currency: USD, next_due_date: 2025-08-15, cadence: MONTHLY, channel_email: true, channel_whatsapp: false }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Create bill
+      tags: [Bills]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewBill'
+            example:
+              name: Internet
+              amount: 49.99
+              currency: USD
+              next_due_date: 2025-08-15
+              cadence: MONTHLY
+              channel_email: true
+              channel_whatsapp: false
+      responses:
+        '201': { description: Created }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /bills/{billId}/pay:
+    post:
+      summary: Mark bill paid
+      tags: [Bills]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: billId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: updated }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /reminders:
+    get:
+      summary: List reminders
+      tags: [Reminders]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: List of reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reminder'
+              example:
+                - { id: 6, message: Pay credit card, send_at: 2025-08-11T10:00:00Z, sent: false, channel: email }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Create reminder
+      tags: [Reminders]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewReminder'
+            example:
+              message: Pay credit card
+              send_at: 2025-08-11T10:00:00Z
+              channel: email
+      responses:
+        '201': { description: Created }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /reminders/run:
+    post:
+      summary: Process due reminders
+      tags: [Reminders]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Processed count }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /insights/budget-suggestion:
+    get:
+      summary: Get monthly budget suggestion
+      tags: [Insights]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Suggestion
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+              example:
+                month: 2025-08
+                total_budget: 1200
+                categories:
+                  Groceries: 300
+                  Utilities: 200
+                  Entertainment: 150
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+      example: { error: "invalid credentials" }
+    TokenPair:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    Expense:
+      type: object
+      properties:
+        id: { type: integer }
+        amount: { type: number, format: float }
+        currency: { type: string }
+        category_id: { type: integer }
+        notes: { type: string, nullable: true }
+        spent_at: { type: string, format: date }
+    NewExpense:
+      type: object
+      required: [amount]
+      properties:
+        amount: { type: number, format: float }
+        currency: { type: string, default: USD }
+        category_id: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
+        spent_at: { type: string, format: date, nullable: true }
+    Bill:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        amount: { type: number, format: float }
+        currency: { type: string }
+        next_due_date: { type: string, format: date }
+        cadence: { type: string, enum: [WEEKLY, MONTHLY, YEARLY, ONCE] }
+        channel_email: { type: boolean }
+        channel_whatsapp: { type: boolean }
+    NewBill:
+      type: object
+      required: [name, amount, next_due_date]
+      properties:
+        name: { type: string }
+        amount: { type: number, format: float }
+        currency: { type: string, default: USD }
+        next_due_date: { type: string, format: date }
+        cadence: { type: string, enum: [WEEKLY, MONTHLY, YEARLY, ONCE], default: MONTHLY }
+        channel_email: { type: boolean, default: true }
+        channel_whatsapp: { type: boolean, default: false }
+    Reminder:
+      type: object
+      properties:
+        id: { type: integer }
+        message: { type: string }
+        send_at: { type: string, format: date-time }
+        sent: { type: boolean }
+        channel: { type: string, enum: [email, whatsapp] }
+    NewReminder:
+      type: object
+      required: [message, send_at]
+      properties:
+        message: { type: string }
+        send_at: { type: string, format: date-time }
+        channel: { type: string, enum: [email, whatsapp], default: email }
