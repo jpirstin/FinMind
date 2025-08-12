@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
+import { FinancialCard, FinancialCardContent } from '@/components/ui/financial-card';
 import { 
   TrendingUp, 
   Mail, 
@@ -42,8 +42,9 @@ export function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const nav = useNavigate();
-  const location = useLocation() as any;
-  const from = location.state?.from?.pathname || '/dashboard';
+  type LocState = { from?: { pathname: string } } | null;
+  const location = useLocation() as unknown as { state: LocState };
+  const from = location?.state?.from?.pathname ?? '/dashboard';
   const { toast } = useToast();
 
   return (
@@ -126,8 +127,8 @@ export function SignIn() {
                       description: 'You have successfully signed in.',
                     });
                     nav(from, { replace: true });
-                  } catch (err: any) {
-                    const message = err?.message || 'Invalid email or password';
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : 'Invalid email or password';
                     setError(message);
                     toast({
                       variant: 'destructive',

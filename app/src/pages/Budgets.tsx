@@ -3,7 +3,7 @@ import { FinancialCard, FinancialCardContent, FinancialCardDescription, Financia
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, DollarSign, Plus, PieChart, TrendingDown, TrendingUp, Target, AlertCircle, Edit, Settings } from 'lucide-react';
+import { Calendar, DollarSign, Plus, PieChart, TrendingDown, TrendingUp, Target, AlertCircle, Settings } from 'lucide-react';
 
 const budgetCategories = [
   {
@@ -99,7 +99,7 @@ const budgetGoals = [
 ];
 
 export function Budgets() {
-  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
+  const [selectedPeriod] = useState('monthly');
   
   const totalAllocated = budgetCategories.reduce((sum, cat) => sum + cat.allocated, 0);
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);

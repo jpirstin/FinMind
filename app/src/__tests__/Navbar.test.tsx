@@ -29,4 +29,14 @@ describe('Navbar auth state', () => {
     expect(screen.getByRole('link', { name: /account/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
   });
+
+  it('logout clears token and returns to signed-out state', async () => {
+    localStorage.setItem('fm_token', 'token');
+    renderNav();
+    const btn = screen.getByRole('button', { name: /logout/i });
+    btn.click();
+    // After logout, token should be removed and Sign In should appear again
+    await screen.findByRole('link', { name: /sign in/i });
+    expect(localStorage.getItem('fm_token')).toBeNull();
+  });
 });

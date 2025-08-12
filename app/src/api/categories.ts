@@ -14,6 +14,6 @@ export async function updateCategory(id: number, name: string): Promise<Category
   return api<Category>(`/categories/${id}`, { method: 'PATCH', body: { name } });
 }
 
-export async function deleteCategory(id: number): Promise<{ message?: string } | {}> {
+export async function deleteCategory(id: number): Promise<{ message?: string } | { message: string }> {
   return api(`/categories/${id}`, { method: 'DELETE' });
 }

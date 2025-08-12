@@ -1,6 +1,6 @@
 import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardFooter, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
 import { Button } from '@/components/ui/button';
-import { ArrowDownRight, ArrowUpRight, CreditCard, DollarSign, PieChart, TrendingDown, TrendingUp, Wallet, AlertTriangle, Calendar, Plus } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, CreditCard, PieChart, TrendingDown, TrendingUp, Wallet, AlertTriangle, Calendar, Plus } from 'lucide-react';
 
 const summaryCards = [
   {

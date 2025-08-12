@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,7 +71,7 @@ const financialGoals = [
 ];
 
 export function Analytics() {
-  const [selectedPeriod, setSelectedPeriod] = useState('6months');
+  // const [selectedPeriod, setSelectedPeriod] = useState('6months');
   
   const currentMonth = monthlyData[monthlyData.length - 1];
   const previousMonth = monthlyData[monthlyData.length - 2];

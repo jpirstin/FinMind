@@ -96,7 +96,9 @@ export default function Expenses() {
     try {
       const cats = await listCategories();
       setCategories(cats);
-    } catch {}
+    } catch {
+      toast({ title: 'Failed to load categories', description: 'Please try again.' });
+    }
   }
 
   function resetForm() {

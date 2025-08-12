@@ -58,7 +58,10 @@ export async function api<T = any>(
     try {
       const obj = JSON.parse(text);
       msg = (obj && (obj.error || obj.message)) || JSON.stringify(obj);
-    } catch {}
+    } catch {
+      msg = text;
+      console.error(msg);
+    }
     throw new Error(msg || `HTTP ${res.status}`);
   }
 

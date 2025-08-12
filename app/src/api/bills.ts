@@ -41,7 +41,7 @@ export async function updateBill(id: number, payload: BillUpdate): Promise<Bill>
   return api<Bill>(`/bills/${id}`, { method: 'PATCH', body: payload });
 }
 
-export async function deleteBill(id: number): Promise<{ message?: string } | {}> {
+export async function deleteBill(id: number): Promise<{ message?: string } | { message: string }> {
   return api(`/bills/${id}`, { method: 'DELETE' });
 }
 

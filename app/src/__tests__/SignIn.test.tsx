@@ -12,26 +12,26 @@ jest.mock('@/components/ui/use-toast', () => ({
 
 // Mock heavy UI components used inside SignIn to avoid jsdom layout APIs
 jest.mock('@/components/ui/financial-card', () => ({
-  FinancialCard: ({ children }: any) => <div data-testid="FinancialCard">{children}</div>,
-  FinancialCardContent: ({ children }: any) => <div>{children}</div>,
-  FinancialCardHeader: ({ children }: any) => <div>{children}</div>,
-  FinancialCardTitle: ({ children }: any) => <div>{children}</div>,
-  FinancialCardDescription: ({ children }: any) => <div>{children}</div>,
+  FinancialCard: ({ children }: React.PropsWithChildren) => <div data-testid="FinancialCard">{children}</div>,
+  FinancialCardContent: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+  FinancialCardHeader: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+  FinancialCardTitle: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+  FinancialCardDescription: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
 }));
 jest.mock('@/components/ui/separator', () => ({
   Separator: () => <hr />,
 }));
 jest.mock('lucide-react', () => new Proxy({}, {
-  get: () => (props: any) => <span {...props} />,
+  get: () => (props: Record<string, unknown>) => <span {...props} />,
 }));
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: React.PropsWithChildren & React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button>,
 }));
 jest.mock('@/components/ui/input', () => ({
-  Input: ({ children, ...props }: any) => <input {...props} />,
+  Input: ({ children, ...props }: React.PropsWithChildren & React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
 }));
 jest.mock('@/components/ui/label', () => ({
-  Label: ({ children, ...props }: any) => <label {...props}>{children}</label>,
+  Label: ({ children, ...props }: React.PropsWithChildren & React.LabelHTMLAttributes<HTMLLabelElement>) => <label {...props}>{children}</label>,
 }));
 
 // Mock router navigate

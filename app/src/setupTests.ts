@@ -7,20 +7,17 @@ beforeAll(() => {
   jest.spyOn(console, 'error').mockImplementation((...args: any[]) => {
     const msg = args?.[0] ?? '';
     if (typeof msg === 'string' && msg.includes('Warning: An update to')) return;
-    // @ts-ignore
-    originalError.call(console, ...args);
+    (originalError as any).call(console, ...args);
   });
 });
 
 afterAll(() => {
-  // @ts-ignore
-  console.error.mockRestore?.();
+  (console.error as any).mockRestore?.();
 });
 
 // JSDOM polyfills for UI libs
 if (typeof window.matchMedia !== 'function') {
-  // @ts-ignore
-  window.matchMedia = (query: string) => ({
+  (window as any).matchMedia = (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -37,12 +34,10 @@ class RO {
   unobserve() {}
   disconnect() {}
 }
-// @ts-ignore
-global.ResizeObserver = global.ResizeObserver || RO;
+;(global as any).ResizeObserver = (global as any).ResizeObserver || RO;
 
 // IntersectionObserver mock
-// @ts-ignore
-global.IntersectionObserver = global.IntersectionObserver || class {
+;(global as any).IntersectionObserver = (global as any).IntersectionObserver || class {
   observe() {}
   unobserve() {}
   disconnect() {}

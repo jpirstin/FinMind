@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardFooter, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CreditCard, Plus, AlertTriangle, CheckCircle, Clock, DollarSign, Filter, Search, Bell } from 'lucide-react';
+import { CreditCard, Plus, AlertTriangle, CheckCircle, Clock, DollarSign, Filter, Search, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { listBills, createBill, markBillPaid, deleteBill, type Bill } from '@/api/bills';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -122,7 +122,7 @@ const billCategories = [
 ];
 
 export function Bills() {
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  // const [selectedFilter, setSelectedFilter] = useState('all');
   // Live data wiring
   const { toast } = useToast();
   const [items, setItems] = useState<Bill[]>([]);
