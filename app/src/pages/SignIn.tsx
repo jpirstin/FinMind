@@ -21,6 +21,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { login } from '@/api/auth';
 import { setToken, setRefreshToken } from '@/lib/auth';
+import { useToast } from '@/components/ui/use-toast';
 
 const socialProviders = [
   { name: 'Google', icon: Chrome, description: 'Sign in with Google' },
@@ -43,6 +44,7 @@ export function SignIn() {
   const nav = useNavigate();
   const location = useLocation() as any;
   const from = location.state?.from?.pathname || '/dashboard';
+  const { toast } = useToast();
 
   return (
     <div className="min-h-screen flex">
@@ -119,9 +121,19 @@ export function SignIn() {
                     const res = await login(email.trim(), password);
                     setToken(res.access_token);
                     if (res.refresh_token) setRefreshToken(res.refresh_token);
+                    toast({
+                      title: 'Welcome back 👋',
+                      description: 'You have successfully signed in.',
+                    });
                     nav(from, { replace: true });
                   } catch (err: any) {
-                    setError(err?.message || 'Sign in failed');
+                    const message = err?.message || 'Invalid email or password';
+                    setError(message);
+                    toast({
+                      variant: 'destructive',
+                      title: 'Sign in failed',
+                      description: message,
+                    });
                   } finally {
                     setLoading(false);
                   }
@@ -156,6 +168,8 @@ export function SignIn() {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Enter your password"
                       className="pl-10 pr-10 h-12"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <button
                       type="button"

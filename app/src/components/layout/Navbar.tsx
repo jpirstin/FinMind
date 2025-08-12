@@ -1,19 +1,40 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, TrendingUp, Shield, Zap } from 'lucide-react';
+import { getToken, clearToken, clearRefreshToken } from '@/lib/auth';
+import { useToast } from '@/components/ui/use-toast';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Budgets', href: '/budgets' },
   { name: 'Bills', href: '/bills' },
+  { name: 'Reminders', href: '/reminders' },
   { name: 'Expenses', href: '/expenses' },
   { name: 'Analytics', href: '/analytics' },
 ];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthed, setIsAuthed] = useState<boolean>(!!getToken());
   const location = useLocation();
+  const nav = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const onChange = () => setIsAuthed(!!getToken());
+    window.addEventListener('auth_changed', onChange);
+    // also check on initial mount in case of direct load
+    onChange();
+    return () => window.removeEventListener('auth_changed', onChange);
+  }, []);
+
+  const handleLogout = () => {
+    clearToken();
+    clearRefreshToken();
+    toast({ title: 'Signed out', description: 'You have been logged out.' });
+    nav('/signin');
+  };
 
   return (
     <nav className="bg-card border-b border-border shadow-sm">
@@ -50,12 +71,25 @@ export function Navbar() {
               <Shield className="w-4 h-4" />
               <span>Secure</span>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/signin">Sign In</Link>
-            </Button>
-            <Button variant="hero" size="sm" asChild>
-              <Link to="/register">Get Started</Link>
-            </Button>
+            {isAuthed ? (
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard">Account</Link>
+                </Button>
+                <Button variant="hero" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/signin">Sign In</Link>
+                </Button>
+                <Button variant="hero" size="sm" asChild>
+                  <Link to="/register">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -89,12 +123,25 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 px-4 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/signin">Sign In</Link>
-                </Button>
-                <Button variant="hero" size="sm" asChild>
-                  <Link to="/register">Get Started</Link>
-                </Button>
+                {isAuthed ? (
+                  <>
+                    <Button variant="outline" size="sm" asChild onClick={() => setIsOpen(false)}>
+                      <Link to="/dashboard">Account</Link>
+                    </Button>
+                    <Button variant="hero" size="sm" onClick={() => { setIsOpen(false); handleLogout(); }}>
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" asChild onClick={() => setIsOpen(false)}>
+                      <Link to="/signin">Sign In</Link>
+                    </Button>
+                    <Button variant="hero" size="sm" asChild onClick={() => setIsOpen(false)}>
+                      <Link to="/register">Get Started</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -7,10 +7,13 @@ export function getToken(): string | null {
 
 export function setToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
+  // notify listeners (e.g., Navbar) that auth state changed
+  window.dispatchEvent(new Event('auth_changed'));
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  window.dispatchEvent(new Event('auth_changed'));
 }
 
 export function getRefreshToken(): string | null {
@@ -19,8 +22,10 @@ export function getRefreshToken(): string | null {
 
 export function setRefreshToken(token: string) {
   localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  window.dispatchEvent(new Event('auth_changed'));
 }
 
 export function clearRefreshToken() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.dispatchEvent(new Event('auth_changed'));
 }

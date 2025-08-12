@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardFooter, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, CreditCard, Plus, AlertTriangle, CheckCircle, Clock, DollarSign, Filter, Search, Bell } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { listBills, createBill, markBillPaid, deleteBill, type Bill } from '@/api/bills';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dailog';
+import { Link } from 'react-router-dom';
 
 const upcomingBills = [
   {
@@ -118,7 +123,64 @@ const billCategories = [
 
 export function Bills() {
   const [selectedFilter, setSelectedFilter] = useState('all');
-  
+  // Live data wiring
+  const { toast } = useToast();
+  const [items, setItems] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [due, setDue] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  async function refresh() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listBills();
+      setItems(data);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load bills');
+      toast({ title: 'Failed to load bills', description: e?.message || 'Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onCreate() {
+    if (!name.trim() || !amount) return;
+    setSaving(true);
+    try {
+      const created = await createBill({ name: name.trim(), amount: Number(amount), next_due_date: due });
+      setItems((prev) => [created, ...prev]);
+      setOpen(false);
+      setName('');
+      setAmount('');
+      setDue(new Date().toISOString().slice(0, 10));
+      toast({ title: 'Bill created' });
+    } catch (e: any) {
+      setError(e?.message || 'Failed to create bill');
+      toast({ title: 'Failed to create bill', description: e?.message || 'Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onMarkPaid(id: number) {
+    try {
+      await markBillPaid(id);
+      toast({ title: 'Marked as paid' });
+      refresh();
+    } catch (e: any) {
+      toast({ title: 'Failed to mark paid', description: e?.message || 'Please try again.' });
+    }
+  }
+
   const totalUpcoming = upcomingBills.reduce((sum, bill) => sum + bill.amount, 0);
   const overdueBills = upcomingBills.filter(bill => bill.status === 'overdue');
   const autoPaidBills = upcomingBills.filter(bill => bill.autopay);
@@ -126,6 +188,95 @@ export function Bills() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container-financial py-8">
+        {/* Live Bills (wired to backend) */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-semibold">Your Bills</h2>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="financial" size="sm">
+                  <Plus className="w-4 h-4" />
+                  Add Bill
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>New Bill</DialogTitle>
+                  <DialogDescription>Create a bill to track upcoming payments.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm mb-1">Name</label>
+                    <input className="input w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="Internet" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm mb-1">Amount</label>
+                      <input className="input w-full" type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">Next Due Date</label>
+                      <input className="input w-full" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+                {error && <div className="error mt-2">{error}</div>}
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+                  <Button onClick={onCreate} disabled={saving || !name.trim() || !amount}>Create</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="card">
+            {loading ? (
+              <div>Loading…</div>
+            ) : items.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No bills yet. Add your first bill.</div>
+            ) : (
+              <div className="space-y-2">
+                {items.map((b) => (
+                  <div key={b.id} className="flex items-center justify-between border-b py-2">
+                    <div>
+                      <div className="font-medium">{b.name}</div>
+                      <div className="text-xs text-muted-foreground">Due {b.next_due_date || '—'} • ${Number(b.amount || 0).toFixed(2)}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => onMarkPaid(b.id)}>Mark Paid</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete bill?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                try {
+                                  await deleteBill(b.id);
+                                  setItems((prev) => prev.filter((x) => x.id !== b.id));
+                                  toast({ title: 'Bill deleted' });
+                                } catch (e: any) {
+                                  toast({ title: 'Failed to delete bill', description: e?.message || 'Please try again.' });
+                                }
+                              }}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
@@ -137,9 +288,11 @@ export function Bills() {
             </p>
           </div>
           <div className="flex gap-3 mt-4 sm:mt-0">
-            <Button variant="outline" size="sm">
-              <Bell className="w-4 h-4" />
-              Reminders
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/reminders">
+                <Bell className="w-4 h-4" />
+                Reminders
+              </Link>
             </Button>
             <Button variant="financial" size="sm">
               <Plus className="w-4 h-4" />
