@@ -14,8 +14,10 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dailog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Categories() {
+  const { toast } = useToast();
   const nav = useNavigate();
   const [items, setItems] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +44,7 @@ export default function Categories() {
       setItems(data);
     } catch (e: any) {
       setError(e?.message || 'Failed to load categories');
-      if ((e?.message || '').toLowerCase().includes('unauthorized')) {
-        nav('/login', { replace: true });
-      }
+      toast({ title: 'Failed to load categories', description: e?.message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -54,11 +54,13 @@ export default function Categories() {
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const c = await createCategory(newName.trim());
-      setItems((prev) => [c, ...prev]);
+      const created = await createCategory(newName.trim());
+      setItems((prev) => [created, ...prev]);
       setNewName('');
+      toast({ title: 'Category created' });
     } catch (e: any) {
       setError(e?.message || 'Failed to create');
+      toast({ title: 'Failed to create category', description: e?.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -68,12 +70,14 @@ export default function Categories() {
     if (!editName.trim()) return;
     setSaving(true);
     try {
-      const c = await updateCategory(id, editName.trim());
-      setItems((prev) => prev.map((x) => (x.id === id ? c : x)));
+      const updated = await updateCategory(id, editName.trim());
+      setItems((prev) => prev.map((x) => (x.id === id ? updated : x)));
       setEditingId(null);
       setEditName('');
+      toast({ title: 'Category updated' });
     } catch (e: any) {
       setError(e?.message || 'Failed to update');
+      toast({ title: 'Failed to update category', description: e?.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -84,8 +88,10 @@ export default function Categories() {
     try {
       await deleteCategory(id);
       setItems((prev) => prev.filter((x) => x.id !== id));
+      toast({ title: 'Category deleted' });
     } catch (e: any) {
       setError(e?.message || 'Failed to delete');
+      toast({ title: 'Failed to delete category', description: e?.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }

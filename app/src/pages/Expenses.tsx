@@ -22,11 +22,22 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dailog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import { useToast } from '@/hooks/use-toast';
 import { listExpenses, createExpense, updateExpense, deleteExpense, type Expense } from '@/api/expenses';
 import { listCategories, type Category } from '@/api/categories';
 
 export default function Expenses() {
-  const [items, setItems] = useState<Expense[]>([]);
+  const { toast } = useToast();
+  const [items, setItems] = useState<Expense[]>([]); // paged items shown
+  const [allItems, setAllItems] = useState<Expense[]>([]); // all filtered items for client-side paging
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +52,14 @@ export default function Expenses() {
   const [categoryId, setCategoryId] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
+  // Filters & pagination
+  const [from, setFrom] = useState<string>('');
+  const [to, setTo] = useState<string>('');
+  const [filterCategoryId, setFilterCategoryId] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   useEffect(() => {
     refresh();
     loadCategories();
@@ -50,10 +69,24 @@ export default function Expenses() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listExpenses();
-      setItems(data);
+      const data = await listExpenses({
+        from: from || undefined,
+        to: to || undefined,
+        category_id: filterCategoryId ? Number(filterCategoryId) : undefined,
+        search: search || undefined,
+        // We still pass page/page_size for future server support,
+        // but we will slice on client for now.
+        page,
+        page_size: pageSize,
+      });
+      setAllItems(data);
+      // Reset page to 1 on new fetch
+      const firstPage = data.slice(0, pageSize);
+      setItems(firstPage);
+      setPage(1);
     } catch (e: any) {
       setError(e?.message || 'Failed to load expenses');
+      toast({ title: 'Failed to load expenses', description: e?.message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -103,7 +136,9 @@ export default function Expenses() {
           date,
           category_id: categoryId ? Number(categoryId) : null,
         });
+        setAllItems((prev) => prev.map((x) => (x.id === editing.id ? updated : x)));
         setItems((prev) => prev.map((x) => (x.id === editing.id ? updated : x)));
+        toast({ title: 'Expense updated' });
       } else {
         const created = await createExpense({
           amount: Number(amount),
@@ -111,12 +146,16 @@ export default function Expenses() {
           date,
           category_id: categoryId ? Number(categoryId) : null,
         });
-        setItems((prev) => [created, ...prev]);
+        setAllItems((prev) => [created, ...prev]);
+        // If on first page, prepend into view; otherwise keep current slice
+        setItems((prev) => (page === 1 ? [created, ...prev].slice(0, pageSize) : prev));
+        toast({ title: 'Expense created' });
       }
       setOpen(false);
       resetForm();
     } catch (e: any) {
       setError(e?.message || 'Failed to save expense');
+      toast({ title: 'Failed to save expense', description: e?.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -126,15 +165,40 @@ export default function Expenses() {
     setSaving(true);
     try {
       await deleteExpense(id);
-      setItems((prev) => prev.filter((x) => x.id !== id));
+      setAllItems((prev) => prev.filter((x) => x.id !== id));
+      // Recompute current page slice after deletion
+      const newAll = allItems.filter((x) => x.id !== id);
+      const newTotalPages = Math.max(1, Math.ceil(newAll.length / pageSize));
+      const nextPage = Math.min(page, newTotalPages);
+      const start = (nextPage - 1) * pageSize;
+      const end = start + pageSize;
+      setItems(newAll.slice(start, end));
+      setPage(nextPage);
+      toast({ title: 'Expense deleted' });
     } catch (e: any) {
       setError(e?.message || 'Failed to delete');
+      toast({ title: 'Failed to delete expense', description: e?.message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
   }
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
+  const totals = useMemo(() => {
+    // Totals over all filtered items
+    const sum = allItems.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    return { sum };
+  }, [allItems]);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(allItems.length / pageSize)), [allItems.length, pageSize]);
+
+  function goToPage(target: number) {
+    const p = Math.min(Math.max(1, target), totalPages);
+    setPage(p);
+    const start = (p - 1) * pageSize;
+    const end = start + pageSize;
+    setItems(allItems.slice(start, end));
+  }
 
   return (
     <div className="space-y-4">
@@ -181,6 +245,35 @@ export default function Expenses() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Filters */}
+      <div className="card p-4 grid md:grid-cols-5 gap-3">
+        <div>
+          <Label htmlFor="from">From</Label>
+          <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="to">To</Label>
+          <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="fcat">Category</Label>
+          <select id="fcat" className="input" value={filterCategoryId} onChange={(e) => setFilterCategoryId(e.target.value)}>
+            <option value="">All</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="search">Search</Label>
+          <Input id="search" placeholder="description contains…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="flex items-end gap-2">
+          <Button variant="outline" onClick={() => { setFrom(''); setTo(''); setFilterCategoryId(''); setSearch(''); setPage(1); }}>Reset</Button>
+          <Button onClick={() => { setPage(1); refresh(); }}>Apply</Button>
+        </div>
       </div>
 
       {loading ? (
@@ -232,10 +325,50 @@ export default function Expenses() {
                       </td>
                     </tr>
                   ))}
+                  {/* Totals Row */}
+                  <tr className="border-t bg-muted/30">
+                    <td className="py-2" colSpan={3}>Total</td>
+                    <td className="py-2 font-semibold">${totals.sum.toFixed(2)}</td>
+                    <td></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           )}
+          {/* Pagination Controls */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">Page {page}</div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); if (page > 1) { goToPage(page - 1); } }} />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink href="#" isActive>
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext href="#" onClick={(e) => { e.preventDefault(); if (page < totalPages) { goToPage(page + 1); } }} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="ps">Page size</Label>
+              <select id="ps" className="input" value={pageSize} onChange={(e) => {
+                const size = Number(e.target.value);
+                setPageSize(size);
+                // Reset to page 1 and slice locally
+                const first = allItems.slice(0, size);
+                setItems(first);
+                setPage(1);
+              }}>
+                {[10, 20, 50].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       )}
     </div>
