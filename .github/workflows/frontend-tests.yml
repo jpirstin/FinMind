@@ -1,13 +1,16 @@
 name: Frontend Tests
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, test-cases, feature/** ]
+    branches: ["**"]
     paths:
       - 'app/**'
       - '.github/workflows/frontend-tests.yml'
   pull_request:
-    branches: [ main ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/frontend-tests.yml'
 
 jobs:
   test:

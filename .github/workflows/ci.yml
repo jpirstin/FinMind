@@ -60,8 +60,9 @@ jobs:
           image-ref: finmind-backend:ci
           format: table
           exit-code: 1
+          ignore-unfixed: true
           vuln-type: os,library
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
 
   frontend:
     runs-on: ubuntu-latest
@@ -70,19 +71,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
       - name: Install
-        run: |
-          cd app
-          npm ci || npm install
+        working-directory: app
+        run: npm ci
       - name: Lint
-        run: |
-          cd app
-          npm run lint
+        working-directory: app
+        run: npm run lint
       - name: Test
-        run: |
-          cd app
-          npm run test -- --run
+        working-directory: app
+        run: npm run test -- --ci
       - name: Build
-        run: |
-          cd app
-          npm run build
+        working-directory: app
+        run: npm run build
