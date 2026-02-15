@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,8 @@ import { listCategories, type Category } from '@/api/categories';
 
 export default function Expenses() {
   const { toast } = useToast();
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
   const [items, setItems] = useState<Expense[]>([]);
   const [allItems, setAllItems] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,12 +76,7 @@ export default function Expenses() {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  useEffect(() => {
-    refresh();
-    loadCategories();
-  }, []);
-
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -94,22 +91,28 @@ export default function Expenses() {
       setAllItems(data);
       setItems(data.slice(0, pageSize));
       setPage(1);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load expenses');
-      toast({ title: 'Failed to load expenses', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to load expenses');
+      setError(message);
+      toast({ title: 'Failed to load expenses', description: message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
-  }
+  }, [filterCategoryId, from, page, pageSize, search, to, toast]);
 
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     try {
       const cats = await listCategories();
       setCategories(cats);
     } catch {
       toast({ title: 'Failed to load categories', description: 'Please try again.' });
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    void refresh();
+    void loadCategories();
+  }, [refresh, loadCategories]);
 
   function resetForm() {
     setAmount('');
@@ -178,9 +181,10 @@ export default function Expenses() {
       }
       setOpen(false);
       resetForm();
-    } catch (e: any) {
-      setError(e?.message || 'Failed to save expense');
-      toast({ title: 'Failed to save expense', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to save expense');
+      setError(message);
+      toast({ title: 'Failed to save expense', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -199,9 +203,10 @@ export default function Expenses() {
       setItems(newAll.slice(start, end));
       setPage(nextPage);
       toast({ title: 'Expense deleted' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to delete');
-      toast({ title: 'Failed to delete expense', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to delete');
+      setError(message);
+      toast({ title: 'Failed to delete expense', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -219,9 +224,10 @@ export default function Expenses() {
       setPreview(data.transactions);
       setPreviewDuplicates(data.duplicates);
       toast({ title: 'Import preview ready', description: `${data.total} rows parsed.` });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to preview import');
-      toast({ title: 'Failed to preview import', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to preview import');
+      setError(message);
+      toast({ title: 'Failed to preview import', description: message || 'Please try again.' });
     } finally {
       setImportLoading(false);
     }
@@ -244,9 +250,10 @@ export default function Expenses() {
       setPreviewDuplicates(0);
       setImportFile(null);
       await refresh();
-    } catch (e: any) {
-      setError(e?.message || 'Failed to import expenses');
-      toast({ title: 'Failed to import expenses', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to import expenses');
+      setError(message);
+      toast({ title: 'Failed to import expenses', description: message || 'Please try again.' });
     } finally {
       setImporting(false);
     }

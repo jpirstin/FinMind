@@ -28,10 +28,10 @@ export async function updateReminder(id: number, payload: ReminderUpdate): Promi
   return api<Reminder>(`/reminders/${id}`, { method: 'PATCH', body: payload });
 }
 
-export async function deleteReminder(id: number): Promise<{ message?: string } | {}> {
+export async function deleteReminder(id: number): Promise<{ message?: string } | Record<string, never>> {
   return api(`/reminders/${id}`, { method: 'DELETE' });
 }
 
-export async function runDue(): Promise<{ processed?: number } | {}> {
+export async function runDue(): Promise<{ processed?: number } | Record<string, never>> {
   return api('/reminders/run', { method: 'POST' });
 }

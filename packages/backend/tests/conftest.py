@@ -56,9 +56,12 @@ def auth_header(client):
     email = "test@example.com"
     password = "password123"
     r = client.post("/auth/register", json={"email": email, "password": password})
-    assert r.status_code in (200, 201, 409), (
-        f"register failed: status={r.status_code}, body={r.get_json()}"
-    )  # 409 if already exists
+    register_debug = f"register failed: status={r.status_code}, body={r.get_json()}"
+    assert r.status_code in (
+        200,
+        201,
+        409,
+    ), register_debug  # 409 if already exists
     r = client.post("/auth/login", json={"email": email, "password": password})
     assert r.status_code == 200
     access = r.get_json()["access_token"]

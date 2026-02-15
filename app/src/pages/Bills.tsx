@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FinancialCard, FinancialCardContent, FinancialCardDescription, FinancialCardFooter, FinancialCardHeader, FinancialCardTitle } from '@/components/ui/financial-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -134,23 +134,27 @@ export function Bills() {
   const [due, setDue] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await listBills();
       setItems(data);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load bills');
-      toast({ title: 'Failed to load bills', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to load bills');
+      setError(message);
+      toast({ title: 'Failed to load bills', description: message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function onCreate() {
     if (!name.trim() || !amount) return;
@@ -163,9 +167,10 @@ export function Bills() {
       setAmount('');
       setDue(new Date().toISOString().slice(0, 10));
       toast({ title: 'Bill created' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to create bill');
-      toast({ title: 'Failed to create bill', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to create bill');
+      setError(message);
+      toast({ title: 'Failed to create bill', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -176,8 +181,8 @@ export function Bills() {
       await markBillPaid(id);
       toast({ title: 'Marked as paid' });
       refresh();
-    } catch (e: any) {
-      toast({ title: 'Failed to mark paid', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      toast({ title: 'Failed to mark paid', description: getErrorMessage(error, 'Please try again.') });
     }
   }
 
@@ -259,8 +264,8 @@ export function Bills() {
                                   await deleteBill(b.id);
                                   setItems((prev) => prev.filter((x) => x.id !== b.id));
                                   toast({ title: 'Bill deleted' });
-                                } catch (e: any) {
-                                  toast({ title: 'Failed to delete bill', description: e?.message || 'Please try again.' });
+                                } catch (error: unknown) {
+                                  toast({ title: 'Failed to delete bill', description: getErrorMessage(error, 'Please try again.') });
                                 }
                               }}
                             >

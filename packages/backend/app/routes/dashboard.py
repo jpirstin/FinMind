@@ -64,7 +64,8 @@ def dashboard_summary():
         payload["summary"]["monthly_income"] = float(income or 0)
         payload["summary"]["monthly_expenses"] = float(expenses or 0)
         payload["summary"]["net_flow"] = round(
-            payload["summary"]["monthly_income"] - payload["summary"]["monthly_expenses"],
+            payload["summary"]["monthly_income"]
+            - payload["summary"]["monthly_expenses"],
             2,
         )
     except Exception:
@@ -152,9 +153,11 @@ def dashboard_summary():
                 "category_id": r.category_id,
                 "category_name": r.category_name,
                 "amount": float(r.total_amount or 0),
-                "share_pct": round((float(r.total_amount or 0) / total) * 100, 2)
-                if total > 0
-                else 0,
+                "share_pct": (
+                    round((float(r.total_amount or 0) / total) * 100, 2)
+                    if total > 0
+                    else 0
+                ),
             }
             for r in category_rows
         ]

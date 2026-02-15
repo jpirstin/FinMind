@@ -93,13 +93,17 @@ def test_dashboard_summary_supports_month_filter(client, auth_header):
     )
     assert r.status_code == 201
 
-    r = client.get(f"/dashboard/summary?month={month_a.strftime('%Y-%m')}", headers=auth_header)
+    r = client.get(
+        f"/dashboard/summary?month={month_a.strftime('%Y-%m')}", headers=auth_header
+    )
     assert r.status_code == 200
     data_a = r.get_json()
     assert data_a["period"]["month"] == month_a.strftime("%Y-%m")
     assert data_a["summary"]["monthly_expenses"] == 200.0
 
-    r = client.get(f"/dashboard/summary?month={month_b.strftime('%Y-%m')}", headers=auth_header)
+    r = client.get(
+        f"/dashboard/summary?month={month_b.strftime('%Y-%m')}", headers=auth_header
+    )
     assert r.status_code == 200
     data_b = r.get_json()
     assert data_b["period"]["month"] == month_b.strftime("%Y-%m")

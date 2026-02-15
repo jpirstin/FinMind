@@ -104,14 +104,19 @@ def _extract_with_gemini(
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured")
     prompt = (
-        "You are FinMind's data-extraction persona: a meticulous bank statement analyst. "
+        "You are FinMind's data-extraction persona: "
+        "a meticulous bank statement analyst. "
         "Extract transactions and return ONLY JSON array. "
-        "Each item: date(YYYY-MM-DD), amount(number), description(string), category_id(null), currency('USD'). "
+        "Each item: date(YYYY-MM-DD), amount(number), "
+        "description(string), category_id(null), currency('USD'). "
         "Ignore balances, totals, and non-transaction rows. "
         "Do not include markdown.\n\n"
         f"STATEMENT_TEXT:\n{text[:120000]}"
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent"
+    )
     resp = requests.post(
         url,
         params={"key": api_key},
@@ -188,7 +193,14 @@ def _infer_expense_type(raw_type: Any, description: str, amount: Decimal) -> str
         return t
     if amount < 0:
         return "EXPENSE"
-    income_keywords = ("SALARY", "PAYROLL", "REFUND", "INTEREST", "DIVIDEND", "CREDIT")
+    income_keywords = (
+        "SALARY",
+        "PAYROLL",
+        "REFUND",
+        "INTEREST",
+        "DIVIDEND",
+        "CREDIT",
+    )
     if any(k in description.upper() for k in income_keywords):
         return "INCOME"
     return "EXPENSE"

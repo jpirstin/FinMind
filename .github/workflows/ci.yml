@@ -76,7 +76,7 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - name: Install
         working-directory: app
-        run: npm ci || npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Lint
         working-directory: app
         run: npm run lint

@@ -105,7 +105,14 @@ def test_expense_import_preview_pdf_uses_extractor(client, auth_header, monkeypa
     _create_category(client, auth_header)
 
     def _fake_extract(*args, **kwargs):
-        return [{"date": "2026-02-10", "amount": 7.5, "description": "Bus", "category_id": None}]
+        return [
+            {
+                "date": "2026-02-10",
+                "amount": 7.5,
+                "description": "Bus",
+                "category_id": None,
+            }
+        ]
 
     monkeypatch.setattr(
         "app.services.expense_import.extract_transactions_from_statement",
@@ -125,7 +132,9 @@ def test_expense_import_preview_pdf_uses_extractor(client, auth_header, monkeypa
     assert payload["transactions"][0]["description"] == "Bus"
 
 
-def test_expense_import_preview_pdf_fallback_without_gemini(client, auth_header, monkeypatch):
+def test_expense_import_preview_pdf_fallback_without_gemini(
+    client, auth_header, monkeypatch
+):
     _create_category(client, auth_header)
 
     sample_text = "\n".join(

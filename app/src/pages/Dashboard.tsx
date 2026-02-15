@@ -40,8 +40,8 @@ export function Dashboard() {
       try {
         const res = await getDashboardSummary(month);
         setData(res);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load dashboard');
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'Failed to load dashboard');
       } finally {
         setLoading(false);
       }
