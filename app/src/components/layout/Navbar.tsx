@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, TrendingUp, ShieldCheck } from 'lucide-react';
-import { getToken, clearToken, clearRefreshToken } from '@/lib/auth';
+import { getToken, getRefreshToken, clearToken, clearRefreshToken } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
+import { logout as logoutApi } from '@/api/auth';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -28,19 +29,28 @@ export function Navbar() {
     return () => window.removeEventListener('auth_changed', onChange);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await logoutApi(refreshToken);
+      } catch {
+        // Best-effort revoke; proceed with local logout regardless.
+      }
+    }
     clearToken();
     clearRefreshToken();
     toast({ title: 'Signed out', description: 'You have been logged out.' });
     nav('/signin');
   };
+  const brandHref = isAuthed ? '/dashboard' : '/';
 
   return (
     <nav className="glass-nav">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-transparent to-accent/10 pointer-events-none" />
       <div className="container-financial relative">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={brandHref} className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-hero text-primary-foreground shadow-primary">
               <TrendingUp className="h-5 w-5" />
             </div>
@@ -79,7 +89,7 @@ export function Navbar() {
                 <Button variant="outline" size="sm" asChild>
                   <Link to="/dashboard">Account</Link>
                 </Button>
-                <Button variant="hero" size="sm" onClick={handleLogout}>
+                <Button variant="hero" size="sm" onClick={() => { void handleLogout(); }}>
                   Logout
                 </Button>
               </>
@@ -128,7 +138,7 @@ export function Navbar() {
                     <Button variant="outline" size="sm" asChild onClick={() => setIsOpen(false)}>
                       <Link to="/dashboard">Account</Link>
                     </Button>
-                    <Button variant="hero" size="sm" onClick={() => { setIsOpen(false); handleLogout(); }}>
+                    <Button variant="hero" size="sm" onClick={() => { setIsOpen(false); void handleLogout(); }}>
                       Logout
                     </Button>
                   </>

@@ -52,7 +52,7 @@ export async function api<T = unknown>(
   let res = await doFetch(true);
 
   // Attempt refresh once on 401
-  if (res.status === 401) {
+  if (res.status === 401 && path !== '/auth/refresh' && path !== '/auth/logout') {
     const rt = getRefreshToken();
     if (rt) {
       try {

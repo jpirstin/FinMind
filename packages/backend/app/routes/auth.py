@@ -3,12 +3,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
+    decode_token,
+    get_jwt,
     jwt_required,
     get_jwt_identity,
 )
-from ..extensions import db
+from ..extensions import db, redis_client
 from ..models import User
 import logging
+import time
 
 bp = Blueprint("auth", __name__)
 logger = logging.getLogger("finmind.auth")
@@ -43,6 +46,7 @@ def login():
         return jsonify(error="invalid credentials"), 401
     access = create_access_token(identity=str(user.id))
     refresh = create_refresh_token(identity=str(user.id))
+    _store_refresh_session(refresh, str(user.id))
     logger.info("Login success user_id=%s", user.id)
     return jsonify(access_token=access, refresh_token=refresh)
 
@@ -50,7 +54,36 @@ def login():
 @bp.post("/refresh")
 @jwt_required(refresh=True)
 def refresh():
+    claims = get_jwt()
+    jti = claims.get("jti")
+    if not jti or not redis_client.get(_refresh_key(jti)):
+        logger.warning("Refresh rejected: revoked/unknown token jti=%s", jti)
+        return jsonify(error="refresh token revoked"), 401
     uid = get_jwt_identity()
     access = create_access_token(identity=str(uid))
     logger.info("Refreshed token for user_id=%s", uid)
     return jsonify(access_token=access)
+
+
+@bp.post("/logout")
+@jwt_required(refresh=True)
+def logout():
+    claims = get_jwt()
+    jti = claims.get("jti")
+    if jti:
+        redis_client.delete(_refresh_key(jti))
+    return jsonify(message="logged out"), 200
+
+
+def _refresh_key(jti: str) -> str:
+    return f"auth:refresh:{jti}"
+
+
+def _store_refresh_session(refresh_token: str, uid: str):
+    payload = decode_token(refresh_token)
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    if not jti or not exp:
+        return
+    ttl = max(int(exp - time.time()), 1)
+    redis_client.setex(_refresh_key(jti), ttl, uid)

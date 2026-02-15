@@ -12,7 +12,17 @@ export async function register(email: string, password: string): Promise<{ messa
 
 export type RefreshResponse = { access_token: string };
 export async function refresh(refresh_token: string): Promise<RefreshResponse> {
-  return api<RefreshResponse>('/auth/refresh', { method: 'POST', body: { refresh_token } });
+  return api<RefreshResponse>('/auth/refresh', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${refresh_token}` },
+  });
+}
+
+export async function logout(refresh_token: string): Promise<{ message: string }> {
+  return api<{ message: string }>('/auth/logout', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${refresh_token}` },
+  });
 }
 
 export type MeResponse = { id: number; email: string };
