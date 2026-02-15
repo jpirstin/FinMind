@@ -6,6 +6,7 @@ from flask_cors import CORS
 import click
 import os
 import logging
+from datetime import timedelta
 
 
 def create_app(settings: Settings | None = None) -> Flask:
@@ -17,6 +18,8 @@ def create_app(settings: Settings | None = None) -> Flask:
         SQLALCHEMY_DATABASE_URI=cfg.database_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JWT_SECRET_KEY=cfg.jwt_secret,
+        JWT_ACCESS_TOKEN_EXPIRES=timedelta(minutes=cfg.jwt_access_minutes),
+        JWT_REFRESH_TOKEN_EXPIRES=timedelta(hours=cfg.jwt_refresh_hours),
         OPENAI_API_KEY=cfg.openai_api_key,
         GEMINI_API_KEY=cfg.gemini_api_key,
         GEMINI_MODEL=cfg.gemini_model,

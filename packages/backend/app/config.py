@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://redis:6379/0")
 
     jwt_secret: str = Field(default="dev-secret-change")
+    jwt_access_minutes: int = 15
+    jwt_refresh_hours: int = 24
 
     openai_api_key: str | None = None
     gemini_api_key: str | None = None

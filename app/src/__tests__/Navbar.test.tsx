@@ -21,6 +21,7 @@ describe('Navbar auth state', () => {
     renderNav();
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /get started/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /finmind/i })).toHaveAttribute('href', '/');
   });
 
   it('shows Account/Logout when signed in (token present)', () => {
@@ -28,6 +29,7 @@ describe('Navbar auth state', () => {
     renderNav();
     expect(screen.getByRole('link', { name: /account/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /finmind/i })).toHaveAttribute('href', '/dashboard');
   });
 
   it('logout clears token and returns to signed-out state', async () => {

@@ -1,7 +1,12 @@
 import React from 'react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+
+jest.mock('@/api/auth', () => ({
+  refresh: jest.fn(),
+}));
+import { refresh } from '@/api/auth';
 
 function ShowLocation() {
   const loc = useLocation();
@@ -52,5 +57,28 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.getByTestId('secret')).toBeInTheDocument();
+  });
+
+  it('refreshes and renders children when only refresh token exists', async () => {
+    localStorage.setItem('fm_refresh_token', 'refresh-only');
+    (refresh as jest.Mock).mockResolvedValue({ access_token: 'new-access' });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <div data-testid="secret">Secret</div>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('secret')).toBeInTheDocument());
+    expect(localStorage.getItem('fm_token')).toBe('new-access');
   });
 });
