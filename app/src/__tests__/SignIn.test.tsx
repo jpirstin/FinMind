@@ -28,7 +28,7 @@ jest.mock('@/components/ui/button', () => ({
   Button: ({ children, ...props }: React.PropsWithChildren & React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button>,
 }));
 jest.mock('@/components/ui/input', () => ({
-  Input: ({ children, ...props }: React.PropsWithChildren & React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
 }));
 jest.mock('@/components/ui/label', () => ({
   Label: ({ children, ...props }: React.PropsWithChildren & React.LabelHTMLAttributes<HTMLLabelElement>) => <label {...props}>{children}</label>,

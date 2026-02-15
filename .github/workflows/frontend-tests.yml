@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci || npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Run tests
         working-directory: app

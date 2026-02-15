@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,8 @@ import { listReminders, createReminder, deleteReminder, runDue, type Reminder } 
 
 export function Reminders() {
   const { toast } = useToast();
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
   const [items, setItems] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,23 +21,24 @@ export function Reminders() {
   const [channel, setChannel] = useState<'email' | 'whatsapp'>('email');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await listReminders();
       setItems(data);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load reminders');
-      toast({ title: 'Failed to load reminders', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to load reminders');
+      setError(message);
+      toast({ title: 'Failed to load reminders', description: message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function onCreate() {
     if (!message.trim()) return;
@@ -48,9 +51,10 @@ export function Reminders() {
       setChannel('email');
       setSendAt(new Date().toISOString().slice(0, 16));
       toast({ title: 'Reminder created' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to create reminder');
-      toast({ title: 'Failed to create reminder', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to create reminder');
+      setError(message);
+      toast({ title: 'Failed to create reminder', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -62,9 +66,10 @@ export function Reminders() {
       await deleteReminder(id);
       setItems((prev) => prev.filter((x) => x.id !== id));
       toast({ title: 'Reminder deleted' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to delete reminder');
-      toast({ title: 'Failed to delete reminder', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to delete reminder');
+      setError(message);
+      toast({ title: 'Failed to delete reminder', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -84,10 +89,11 @@ export function Reminders() {
             onClick={async () => {
               try {
                 const res = await runDue();
-                toast({ title: 'Processed due reminders', description: typeof res === 'object' && res && 'processed' in res ? `${(res as any).processed} processed` : undefined });
-                refresh();
-              } catch (e: any) {
-                toast({ title: 'Failed to run due reminders', description: e?.message || 'Please try again.' });
+                const processed = typeof res.processed === 'number' ? `${res.processed} processed` : undefined;
+                toast({ title: 'Processed due reminders', description: processed });
+                void refresh();
+              } catch (error: unknown) {
+                toast({ title: 'Failed to run due reminders', description: getErrorMessage(error, 'Please try again.') });
               }
             }}
           >
@@ -114,7 +120,7 @@ export function Reminders() {
                 </div>
                 <div>
                   <Label htmlFor="channel">Channel</Label>
-                  <select id="channel" className="input" value={channel} onChange={(e) => setChannel(e.target.value as any)}>
+                  <select id="channel" className="input" value={channel} onChange={(e) => setChannel(e.target.value as 'email' | 'whatsapp')}>
                     <option value="email">Email</option>
                     <option value="whatsapp">WhatsApp</option>
                   </select>

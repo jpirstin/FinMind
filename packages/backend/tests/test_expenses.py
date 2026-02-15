@@ -105,7 +105,14 @@ def test_expense_import_preview_pdf_uses_extractor(client, auth_header, monkeypa
     _create_category(client, auth_header)
 
     def _fake_extract(*args, **kwargs):
-        return [{"date": "2026-02-10", "amount": 7.5, "description": "Bus", "category_id": None}]
+        return [
+            {
+                "date": "2026-02-10",
+                "amount": 7.5,
+                "description": "Bus",
+                "category_id": None,
+            }
+        ]
 
     monkeypatch.setattr(
         "app.services.expense_import.extract_transactions_from_statement",
@@ -123,3 +130,39 @@ def test_expense_import_preview_pdf_uses_extractor(client, auth_header, monkeypa
     payload = r.get_json()
     assert payload["total"] == 1
     assert payload["transactions"][0]["description"] == "Bus"
+
+
+def test_expense_import_preview_pdf_fallback_without_gemini(
+    client, auth_header, monkeypatch
+):
+    _create_category(client, auth_header)
+
+    sample_text = "\n".join(
+        [
+            "2026-02-10 Coffee Shop -4.50",
+            "2026-02-11 Payroll Deposit 2500.00",
+        ]
+    )
+    monkeypatch.setattr(
+        "app.services.expense_import._extract_pdf_text",
+        lambda _data: sample_text,
+    )
+
+    data = {"file": (BytesIO(b"%PDF-1.4 fake"), "statement.pdf")}
+    r = client.post(
+        "/expenses/import/preview",
+        data=data,
+        content_type="multipart/form-data",
+        headers=auth_header,
+    )
+    assert r.status_code == 200
+    payload = r.get_json()
+    assert payload["total"] == 2
+    assert payload["duplicates"] == 0
+    tx = payload["transactions"]
+    assert tx[0]["description"] == "Coffee Shop"
+    assert tx[0]["amount"] == 4.5
+    assert tx[0]["expense_type"] == "EXPENSE"
+    assert tx[1]["description"] == "Payroll Deposit"
+    assert tx[1]["amount"] == 2500.0
+    assert tx[1]["expense_type"] == "INCOME"

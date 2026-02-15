@@ -3,6 +3,7 @@ import pytest
 from app import create_app
 from app.config import Settings
 from app.extensions import db
+from app.extensions import redis_client
 from app import models  # noqa: F401 - ensure models are registered
 
 
@@ -30,10 +31,18 @@ def app_fixture():
     app = create_app(settings)
     app.config.update(TESTING=True)
     _setup_db(app)
+    try:
+        redis_client.flushdb()
+    except Exception:
+        pass
     yield app
     with app.app_context():
         db.session.remove()
         db.drop_all()
+    try:
+        redis_client.flushdb()
+    except Exception:
+        pass
 
 
 @pytest.fixture()
@@ -47,9 +56,12 @@ def auth_header(client):
     email = "test@example.com"
     password = "password123"
     r = client.post("/auth/register", json={"email": email, "password": password})
-    assert r.status_code in (200, 201, 409), (
-        f"register failed: status={r.status_code}, body={r.get_json()}"
-    )  # 409 if already exists
+    register_debug = f"register failed: status={r.status_code}, body={r.get_json()}"
+    assert r.status_code in (
+        200,
+        201,
+        409,
+    ), register_debug  # 409 if already exists
     r = client.post("/auth/login", json={"email": email, "password": password})
     assert r.status_code == 200
     access = r.get_json()["access_token"]

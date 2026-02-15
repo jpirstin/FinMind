@@ -41,8 +41,7 @@ def list_expenses():
         q = q.filter(Expense.notes.ilike(f"%{search}%"))
 
     items = (
-        q
-        .order_by(Expense.spent_at.desc())
+        q.order_by(Expense.spent_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

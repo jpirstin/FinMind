@@ -30,9 +30,9 @@ export const baseURL = resolveApiBaseUrl();
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
-export async function api<T = any>(
+export async function api<T = unknown>(
   path: string,
-  opts: { method?: HttpMethod; body?: any; headers?: Record<string, string> } = {},
+  opts: { method?: HttpMethod; body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<T> {
   async function doFetch(withAuth = true): Promise<Response> {
     const token = withAuth ? getToken() : null;
@@ -75,7 +75,7 @@ export async function api<T = any>(
     const text = await res.text();
     let msg = text;
     try {
-      const obj = JSON.parse(text);
+      const obj = JSON.parse(text) as { error?: string; message?: string };
       msg = (obj && (obj.error || obj.message)) || JSON.stringify(obj);
     } catch {
       msg = text;

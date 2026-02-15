@@ -45,9 +45,10 @@ export default function Categories() {
     try {
       const data = await listCategories();
       setItems(data);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load categories');
-      toast({ title: 'Failed to load categories', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to load categories');
+      setError(message);
+      toast({ title: 'Failed to load categories', description: message || 'Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -61,9 +62,10 @@ export default function Categories() {
       setItems((prev) => [created, ...prev]);
       setNewName('');
       toast({ title: 'Category created' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to create');
-      toast({ title: 'Failed to create category', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to create');
+      setError(message);
+      toast({ title: 'Failed to create category', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -78,9 +80,10 @@ export default function Categories() {
       setEditingId(null);
       setEditName('');
       toast({ title: 'Category updated' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to update');
-      toast({ title: 'Failed to update category', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to update');
+      setError(message);
+      toast({ title: 'Failed to update category', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -92,9 +95,10 @@ export default function Categories() {
       await deleteCategory(id);
       setItems((prev) => prev.filter((x) => x.id !== id));
       toast({ title: 'Category deleted' });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to delete');
-      toast({ title: 'Failed to delete category', description: e?.message || 'Please try again.' });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error, 'Failed to delete');
+      setError(message);
+      toast({ title: 'Failed to delete category', description: message || 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -173,3 +177,5 @@ export default function Categories() {
     </div>
   );
 }
+  const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
