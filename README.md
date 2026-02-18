@@ -1,4 +1,4 @@
-# FinMind — AI-Powered Budget & Bill Tracking
+# FinMind — Smart Budget & Bill Tracking
 
 FinMind helps users control spending, track bills, and get smart financial insights. Built for free-tier friendly deployment with scalable architecture.
 
@@ -18,7 +18,7 @@ flowchart LR
   subgraph Backend[Flask API]
     API[Flask + Gunicorn]
     JWT[PyJWT]
-    AI[Insights Service]
+    Insights[Insights Service]
     SCH[Scheduler/APScheduler]
   end
 
@@ -30,7 +30,7 @@ flowchart LR
   subgraph ThirdParty
     TW[Twilio WhatsApp]
     SMTP[Email Provider]
-    OAI[OpenAI or Local ML]
+    OAI[Analytics Engine]
   end
 
   A -->|HTTPS| CDN --> API
@@ -72,7 +72,7 @@ OpenAPI: `backend/app/openapi.yaml`
 - Dashboard:
   - Monthly spend chart, category breakdown donut.
   - Upcoming bills list with due dates and pay status.
-  - AI budget suggestion card.
+  - Smart budget suggestion card.
 - Expenses page: add expense (amount, category, notes, date), list & filter.
 - Bills page: create bill (name, amount, cadence, due date, channel), toggle WhatsApp/email.
 - Settings: profile, categories, reminders default channel, export (premium).
